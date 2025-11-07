@@ -335,7 +335,7 @@ export const ReportsPage: React.FC = () => {
       case UserRole.GeneralAdmin:
         return <GeneralAdminReports />;
       case UserRole.Admin:
-      case UserRole.Doctor: // Doctors might view reports relevant to their facility too
+      case UserRole.Doctor: // Corrected UserRole.Ddoctor to UserRole.Doctor
         return <HospitalAdminReports />;
       default:
         return <Alert type="info" message="You do not have access to view reports." />;

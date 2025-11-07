@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AuthLoginRegisterResponse, GetProfileResponse } from '../types';
 import { authService } from '../services/api';
-import { API_BASE_URL } from '../constants'; // Import for error handling feedback
+// Removed API_BASE_URL import as it was not used here and caused an error if not exported from constants.
+// If needed for actual backend calls, it should be part of constants.ts.
 
 interface AuthContextType {
   user: User | null;
@@ -78,7 +79,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error.response) {
         throw new Error(error.response.data.message || 'Login failed. Please check your credentials.');
       } else if (error.request) {
-        throw new Error(`No response from server. Is the backend running at ${API_BASE_URL}?`);
+        // Removed reference to API_BASE_URL as it's not consistently available or directly used in mock
+        throw new Error(`No response from server. Please check your network connection or backend.`);
       } else {
         throw new Error('An unexpected error occurred during login.');
       }
@@ -94,7 +96,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error.response) {
         throw new Error(error.response.data.message || 'Registration failed.');
       } else if (error.request) {
-        throw new Error(`No response from server. Is the backend running at ${API_BASE_URL}?`);
+        // Removed reference to API_BASE_URL as it's not consistently available or directly used in mock
+        throw new Error(`No response from server. Please check your network connection or backend.`);
       } else {
         throw new Error('An unexpected error occurred during registration.');
       }

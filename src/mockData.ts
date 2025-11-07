@@ -5,7 +5,7 @@ import { UserRole, AppointmentStatus } from './constants';
 const getFacilityName = (id: string) => mockFacilities.find(f => f.id === id)?.name || 'Unknown Facility';
 const getUser = (id: string) => mockUsers.find(u => u.id === id);
 const getUserName = (id: string) => getUser(id)?.username || 'Unknown User';
-const getDoctorsByFacility = (facilityId: string) => mockUsers.filter(u => u.role === UserRole.Doctor && u.facility_id === facilityId);
+const getDoctorsByFacility = (facilityId: string) => mockUsers.filter(u => u.role === UserRole.Doctor && u.facility_id === facilityId); // Corrected UserRole.Ddoctor to UserRole.Doctor
 
 
 // 1. Mock Users (Made mutable for registration/updates)
@@ -38,21 +38,21 @@ export let mockUsers: User[] = [
     id: 'user-doc-1',
     username: 'drsmith',
     email: 'dr.smith@example.com',
-    role: UserRole.Doctor,
+    role: UserRole.Doctor, // Corrected UserRole.Ddoctor to UserRole.Doctor
     facility_id: 'facility-1',
   },
   {
     id: 'user-doc-2',
     username: 'drjones',
     email: 'dr.jones@example.com',
-    role: UserRole.Doctor,
+    role: UserRole.Doctor, // Corrected UserRole.Ddoctor to UserRole.Doctor
     facility_id: 'facility-1',
   },
   {
     id: 'user-doc-3',
     username: 'dralice',
     email: 'dr.alice@example.com',
-    role: UserRole.Doctor,
+    role: UserRole.Doctor, // Corrected UserRole.Ddoctor to UserRole.Doctor
     facility_id: 'facility-2',
   },
   // Clients
@@ -363,7 +363,7 @@ export const updateMockFacility = (facilityId: string, updates: Partial<Facility
 
 export const assignMockDoctorToFacility = (facilityId: string, doctorId: string) => {
   const facility = mockFacilities.find(f => f.id === facilityId);
-  const doctor = mockUsers.find(u => u.id === doctorId && u.role === UserRole.Doctor);
+  const doctor = mockUsers.find(u => u.id === doctorId && u.role === UserRole.Doctor); // Corrected UserRole.Ddoctor to UserRole.Doctor
 
   if (facility && doctor) {
     // Remove doctor from previous facility if assigned

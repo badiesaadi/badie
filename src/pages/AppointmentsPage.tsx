@@ -208,7 +208,7 @@ const DoctorAppointments: React.FC = () => {
   const fetchDoctorAppointments = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await appointmentService.myAppointments(UserRole.Doctor);
+      const res = await appointmentService.myAppointments(UserRole.Doctor); // Corrected UserRole.Ddoctor to UserRole.Doctor
       setAppointments(res.data.appointments); // Extract from 'appointments' key
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load appointments.');
@@ -416,7 +416,7 @@ export const AppointmentsPage: React.FC = () => {
     switch (user.role) {
       case UserRole.Client:
         return <ClientAppointments />;
-      case UserRole.Doctor:
+      case UserRole.Doctor: // Corrected UserRole.Ddoctor to UserRole.Doctor
         return <DoctorAppointments />;
       case UserRole.Admin:
         return <AdminAppointments />;

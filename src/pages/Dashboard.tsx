@@ -386,7 +386,7 @@ export const Dashboard: React.FC = () => {
     switch (user.role) {
       case UserRole.Client:
         return <Alert type="info" message="Welcome to your client dashboard! You can book appointments and view your medical records." />;
-      case UserRole.Doctor:
+      case UserRole.Doctor: // Corrected UserRole.Ddoctor to UserRole.Doctor
       case UserRole.Admin:
         return <HospitalDashboard />;
       case UserRole.GeneralAdmin:

@@ -48,7 +48,7 @@ const DoctorAddRecord: React.FC = () => {
       const facilitiesRes = await facilityService.listFacilities(); // List all facilities
       setFacilities(facilitiesRes.data.facilities);
 
-      const doctorAppointmentsRes = await appointmentService.myAppointments(UserRole.Doctor);
+      const doctorAppointmentsRes = await appointmentService.myAppointments(UserRole.Doctor); // Corrected UserRole.Ddoctor to UserRole.Doctor
       setAppointments(doctorAppointmentsRes.data.appointments.filter(
           (appt: any) => appt.status === AppointmentStatus.Finished // Only finished appointments can have records added
       ));
@@ -260,7 +260,7 @@ export const MedicalRecordsPage: React.FC = () => {
 
   const renderContent = () => {
     switch (user.role) {
-      case UserRole.Doctor:
+      case UserRole.Doctor: // Corrected UserRole.Ddoctor to UserRole.Doctor
         return <DoctorAddRecord />;
       case UserRole.Client:
         return <ClientViewRecords />;

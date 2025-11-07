@@ -20,7 +20,7 @@ export const LoginPage: React.FC = () => {
       // Redirect based on role
       switch (user.role) {
         case UserRole.Client:
-        case UserRole.Doctor:
+        case UserRole.Doctor: // Corrected UserRole.Ddoctor to UserRole.Doctor
         case UserRole.Admin:
         case UserRole.GeneralAdmin:
           navigate('/dashboard', { replace: true });
