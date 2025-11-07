@@ -78,11 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Login failed:', error);
       if (error.response) {
         throw new Error(error.response.data.message || 'Login failed. Please check your credentials.');
-      } else if (error.request) {
-        // Removed reference to API_BASE_URL as it's not consistently available or directly used in mock
-        throw new Error(`No response from server. Please check your network connection or backend.`);
       } else {
-        throw new Error('An unexpected error occurred during login.');
+        throw new Error('An unexpected error occurred during login. This is a mock environment.');
       }
     }
   };
@@ -95,11 +92,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Registration failed:', error);
       if (error.response) {
         throw new Error(error.response.data.message || 'Registration failed.');
-      } else if (error.request) {
-        // Removed reference to API_BASE_URL as it's not consistently available or directly used in mock
-        throw new Error(`No response from server. Please check your network connection or backend.`);
       } else {
-        throw new Error('An unexpected error occurred during registration.');
+        throw new Error('An unexpected error occurred during registration. This is a mock environment.');
       }
     }
   };

@@ -1,4 +1,4 @@
-import { UserRole, AppointmentStatus, USE_MOCK_DATA } from '../constants';
+import { UserRole, AppointmentStatus } from '../constants';
 import {
   User, Facility, Appointment, MedicalRecord, SupplyRequest, Feedback,
   AuthLoginRegisterResponse, GetProfileResponse, RequestResetResponse, ResetPasswordResponse,
@@ -192,7 +192,7 @@ const appointmentServiceMock = {
     let filteredAppointments: Appointment[] = [];
     if (role === UserRole.Client) {
       filteredAppointments = mockAppointments.filter(a => a.client_id === currentUser.id);
-    } else if (role === UserRole.Doctor) { // Corrected UserRole.Ddoctor to UserRole.Doctor
+    } else if (role === UserRole.Doctor) {
       filteredAppointments = mockAppointments.filter(a => a.doctor_id === currentUser.id);
     }
     return mockResponse<MyAppointmentsResponse>({ appointments: filteredAppointments }, true);
@@ -205,7 +205,7 @@ const appointmentServiceMock = {
     return mockResponse<FacilityAppointmentsResponse>({ facility_id: facilityId, appointments: filteredAppointments }, true);
   },
   listDoctors: (facilityId?: string) => {
-    let doctors = mockUsers.filter(u => u.role === UserRole.Doctor); // Corrected UserRole.Ddoctor to UserRole.Doctor
+    let doctors = mockUsers.filter(u => u.role === UserRole.Doctor);
     if (facilityId) {
       doctors = doctors.filter(d => d.facility_id === facilityId);
     }
@@ -281,7 +281,7 @@ const ministryServiceMock = {
     const totalOccupiedBeds = mockFacilities.reduce((sum, f) => sum + f.occupied_beds, 0);
     const nationalAvgOccupancy = totalBeds > 0 ? (totalOccupiedBeds / totalBeds) * 100 : 0;
     const pendingRequests = mockSupplyRequests.filter(req => req.status === 'pending').length;
-    const totalDoctors = mockUsers.filter(u => u.role === UserRole.Doctor).length; // Corrected UserRole.Ddoctor to UserRole.Doctor
+    const totalDoctors = mockUsers.filter(u => u.role === UserRole.Doctor).length;
 
     return mockResponse({
       totalFacilities,
