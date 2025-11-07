@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../components/layouts/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
-import { MedicalRecord, User } from '../types';
+import { MedicalRecord, User, MedicalRecordPayload } from '../types'; // Added MedicalRecordPayload
 import { medicalRecordService, appointmentService, facilityService } from '../services/api';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Alert } from '../components/ui/Alert';
 import { Input, Textarea, Select } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Table } from '../components/ui/Table';
-import { Plus, FileText, CalendarCheck, User as UserIcon } from 'lucide-react';
+import { Table } from '../components/ui/Table'; // Keep Table, though not directly used in ClientViewRecords, might be useful
+import { Plus, FileText, CalendarCheck, User as UserIcon } from 'lucide-react'; // Plus and FileText used in content
 import { UserRole, AppointmentStatus } from '../constants';
 import { DatePicker } from '../components/ui/DatePicker';
 import { motion } from 'framer-motion';
@@ -17,9 +17,9 @@ import { Pagination } from '../components/common/Pagination';
 
 const DoctorAddRecord: React.FC = () => {
   const { user } = useAuth();
-  const [clients, setClients] = useState<User[]>([]); // This would come from an API endpoint, simulating for now
+  const [clients, setClients] = useState<User[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]); // Filtered for finished appointments
-  const [facilities, setFacilities] = useState<any[]>([]);
+  const [facilities, setFacilities] = useState<any[]>([]); // Facilities user's doctor can operate in
 
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedAppointment, setSelectedAppointment] = useState('');
@@ -34,22 +34,23 @@ const DoctorAddRecord: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   const fetchInitialData = useCallback(async () => {
+    if (!user?.id || !user?.facility_id) {
+        setError("Doctor profile information is incomplete. Cannot load data.");
+        setLoading(false);
+        return;
+    }
     try {
       setLoading(true);
-      // Simulate fetching clients and facilities for selection
-      // In a real app, this would be `api.get('/users/clients')` and `api.get('/facilities')`
-      setClients([
-        { id: 'client1', username: 'Ahmed Said', email: 'ahmed@example.com', role: UserRole.Client },
-        { id: 'client2', username: 'Fatima Zohra', email: 'fatima@example.com', role: UserRole.Client },
-      ]);
+      // Fetch clients the doctor has treated or can treat
+      const clientsRes = await medicalRecordService.listClients(user.id); // Assuming this returns {success:true, data: User[]}
+      setClients(clientsRes.data.facilities?.[0]?.doctors || []); // Adjusted to match listDoctors dummy data shape for consistency
 
-      const facilitiesRes = await facilityService.listFacilities();
-      setFacilities(facilitiesRes.data);
+      const facilitiesRes = await facilityService.listFacilities(); // List all facilities
+      setFacilities(facilitiesRes.data.facilities);
 
       const doctorAppointmentsRes = await appointmentService.myAppointments(UserRole.Doctor);
-      // Filter for finished appointments not yet associated with a record
-      setAppointments(doctorAppointmentsRes.data.filter(
-          (appt: any) => appt.status === AppointmentStatus.Finished
+      setAppointments(doctorAppointmentsRes.data.appointments.filter(
+          (appt: any) => appt.status === AppointmentStatus.Finished // Only finished appointments can have records added
       ));
 
     } catch (err: any) {
@@ -57,7 +58,7 @@ const DoctorAddRecord: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchInitialData();
@@ -69,8 +70,8 @@ const DoctorAddRecord: React.FC = () => {
     setFormLoading(true);
     setFormError(null);
 
-    if (!user || !user.facility_id) {
-        setFormError("Doctor information (facility_id) is missing.");
+    if (!user || !user.id || !user.facility_id) {
+        setFormError("Doctor information (ID or facility_id) is missing.");
         setFormLoading(false);
         return;
     }
@@ -85,15 +86,18 @@ const DoctorAddRecord: React.FC = () => {
       const targetClientId = selectedAppt ? selectedAppt.client_id : selectedClient; // Use appt client or manual
       const targetFacilityId = selectedAppt ? selectedAppt.facility_id : user.facility_id; // Use appt facility or doctor's facility
 
-      await medicalRecordService.addRecord({
+      const payload: MedicalRecordPayload = {
         client_id: targetClientId,
         doctor_id: user.id,
         facility_id: targetFacilityId,
+        appointment_id: selectedAppointment || null, // Can be null if not linked to an appointment
         date: recordDate,
         diagnosis,
         notes,
         prescription,
-      });
+      };
+
+      await medicalRecordService.addRecord(payload);
       // Clear form
       setSelectedClient('');
       setSelectedAppointment('');
@@ -175,7 +179,7 @@ const ClientViewRecords: React.FC = () => {
   const itemsPerPage = 5;
 
   const fetchClientRecords = useCallback(async () => {
-    if (!user) {
+    if (!user?.id) {
         setError("User not logged in.");
         setLoading(false);
         return;
@@ -183,13 +187,13 @@ const ClientViewRecords: React.FC = () => {
     try {
       setLoading(true);
       const res = await medicalRecordService.getClientRecords(user.id);
-      setRecords(res.data);
+      setRecords(res.data.records); // Extract from 'records' key
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load medical records.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchClientRecords();

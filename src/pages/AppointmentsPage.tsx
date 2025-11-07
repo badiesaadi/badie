@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../components/layouts/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
-import { Appointment, Facility, User } from '../types';
+import { Appointment, Facility, User, AppointmentPayload } from '../types'; // Added AppointmentPayload
 import { appointmentService, facilityService } from '../services/api';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Alert } from '../components/ui/Alert';
@@ -9,7 +9,7 @@ import { Input, Select, Textarea } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Table } from '../components/ui/Table';
-import { Calendar as LucideCalendar, CheckCircle, XCircle, Clock, Dot } from 'lucide-react';
+import { Calendar as LucideCalendar, CheckCircle, XCircle, Dot } from 'lucide-react'; // Removed Clock as unused
 import { UserRole, AppointmentStatus } from '../constants';
 import { DatePicker } from '../components/ui/DatePicker';
 import { motion } from 'framer-motion';
@@ -56,10 +56,10 @@ const ClientAppointments: React.FC = () => {
     try {
       setLoading(true);
       const apptsRes = await appointmentService.myAppointments(UserRole.Client);
-      setAppointments(apptsRes.data);
+      setAppointments(apptsRes.data.appointments); // Extract from 'appointments' key
 
       const facilitiesRes = await facilityService.listFacilities();
-      setFacilities(facilitiesRes.data);
+      setFacilities(facilitiesRes.data.facilities); // Extract from 'facilities' key
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load data.');
     } finally {
@@ -73,33 +73,45 @@ const ClientAppointments: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedFacilityId) {
-      const facility = facilities.find(f => f.id === selectedFacilityId);
-      setDoctors(facility?.doctors || []);
+    const fetchDoctorsForFacility = async () => {
+      if (selectedFacilityId) {
+        try {
+          // This endpoint needs to be adjusted in api.ts to fetch doctors associated with a facility
+          // For now, let's assume it returns a list of users with role 'doctor'
+          const res = await appointmentService.listDoctors(selectedFacilityId);
+          setDoctors(res.data.facilities?.[0]?.doctors || []); // Assuming doctors are nested in facility for listDoctors
+        } catch (err: any) {
+          console.error("Failed to fetch doctors for facility:", err);
+          setDoctors([]);
+        }
+      } else {
+        setDoctors([]);
+      }
       setSelectedDoctorId('');
-    } else {
-      setDoctors([]);
-      setSelectedDoctorId('');
-    }
-  }, [selectedFacilityId, facilities]);
+    };
+
+    fetchDoctorsForFacility();
+  }, [selectedFacilityId]);
+
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
     setFormError(null);
-    if (!user) {
+    if (!user || !user.id) {
         setFormError("User not logged in.");
         setFormLoading(false);
         return;
     }
     try {
-      await appointmentService.createAppointment({
+      const payload: AppointmentPayload = {
         client_id: user.id,
         facility_id: selectedFacilityId,
         doctor_id: selectedDoctorId,
         date_time: appointmentDateTime,
         reason,
-      });
+      };
+      await appointmentService.createAppointment(payload);
       await fetchClientData(); // Refresh list
       setSelectedFacilityId('');
       setSelectedDoctorId('');
@@ -197,7 +209,7 @@ const DoctorAppointments: React.FC = () => {
     try {
       setLoading(true);
       const res = await appointmentService.myAppointments(UserRole.Doctor);
-      setAppointments(res.data);
+      setAppointments(res.data.appointments); // Extract from 'appointments' key
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load appointments.');
     } finally {
@@ -291,7 +303,7 @@ const AdminAppointments: React.FC = () => {
     try {
       setLoading(true);
       const res = await appointmentService.facilityAppointments(user.facility_id);
-      setAppointments(res.data);
+      setAppointments(res.data.appointments); // Extract from 'appointments' key
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load facility appointments.');
     } finally {

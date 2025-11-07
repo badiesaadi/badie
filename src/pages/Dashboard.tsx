@@ -6,7 +6,7 @@ import { Card } from '../components/ui/Card';
 import { BarChartCard } from '../components/charts/BarChartCard';
 import { LineChartCard } from '../components/charts/LineChartCard';
 import { PieChartCard } from '../components/charts/PieChartCard';
-import { Users, CalendarCheck, HeartPulse, Stethoscope, Bed, CircleDollarSign, Hospital } from 'lucide-react';
+import { Users, CalendarCheck, Stethoscope, Bed, CircleDollarSign, Hospital } from 'lucide-react'; // Removed HeartPulse as it was unused
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Alert } from '../components/ui/Alert';
 import { Facility, Appointment, ChartDataPoint, SupplyRequest, Feedback } from '../types';
@@ -37,7 +37,7 @@ const HospitalDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [myFacility, setMyFacility] = useState<Facility | null>(null);
   const [facilityAppointments, setFacilityAppointments] = useState<Appointment[]>([]);
-  const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]);
+  const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]); // This will now hold InventoryItem or SupplyRequest
   const [feedback, setFeedback] = useState<Feedback[]>([]);
 
   const fetchHospitalData = async () => {
@@ -49,19 +49,19 @@ const HospitalDashboard: React.FC = () => {
     try {
       setLoading(true);
       const facilityRes = await facilityService.getMyFacility();
-      setMyFacility(facilityRes.data);
+      setMyFacility(facilityRes.data.facility); // Extract from 'facility' key
 
       const appointmentsRes = await appointmentService.facilityAppointments(user.facility_id);
-      setFacilityAppointments(appointmentsRes.data);
+      setFacilityAppointments(appointmentsRes.data.appointments); // Extract from 'appointments' key
 
       // Simulate fetching inventory requests specific to this facility
       // As per requirement, "Send Request to Ministry" button adds new request visible in Ministry dashboard.
       // So, this would be a filtered view of ministry's requests or a separate facility-specific endpoint.
       const requestsRes = await inventoryService.getInventory(user.facility_id); // Re-using inventory for demo
-      setSupplyRequests(requestsRes.data);
+      setSupplyRequests(requestsRes.data.data); // Extract from 'data' key
 
       const feedbackRes = await feedbackService.getFacilityFeedback(user.facility_id);
-      setFeedback(feedbackRes.data);
+      setFeedback(feedbackRes.data.data); // Extract from 'data' key
 
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load hospital data.');
@@ -168,7 +168,8 @@ const HospitalDashboard: React.FC = () => {
             <p className="text-gray-500">No recent supply requests.</p>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {supplyRequests.slice(0, 5).map((request) => (
+              {/* Assuming supplyRequests contain 'item_name', 'quantity', 'status' */}
+              {supplyRequests.slice(0, 5).map((request: any) => ( // Use any for demo or create InventoryItem type
                 <li key={request.id} className="py-2 flex justify-between items-center">
                   <span className="text-text">{request.item_name} ({request.quantity})</span>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -229,13 +230,13 @@ const MinistryDashboard: React.FC = () => {
     try {
       setLoading(true);
       const facilitiesRes = await facilityService.listFacilities();
-      setFacilities(facilitiesRes.data);
+      setFacilities(facilitiesRes.data.facilities); // Extract from 'facilities' key
 
       const requestsRes = await ministryService.getSupplyRequests();
-      setSupplyRequests(requestsRes.data);
+      setSupplyRequests(requestsRes.data.data); // Extract from 'data' key
 
       const feedbackRes = await feedbackService.getNationalFeedback();
-      setNationalFeedback(feedbackRes.data);
+      setNationalFeedback(feedbackRes.data.data); // Extract from 'data' key
 
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load ministry data.');
@@ -256,7 +257,7 @@ const MinistryDashboard: React.FC = () => {
   const totalClinics = facilities.filter(f => f.type === 'clinic').length;
   const totalFacilities = facilities.length;
   const pendingRequests = supplyRequests.filter(req => req.status === 'pending').length;
-  const nationalAvgOccupancy = facilities.length > 0
+  const nationalAvgOccupancy = facilities.length > 0 && facilities.reduce((sum, f) => sum + f.beds, 0) > 0
     ? (facilities.reduce((sum, f) => sum + f.occupied_beds, 0) / facilities.reduce((sum, f) => sum + f.beds, 0) * 100).toFixed(1)
     : 0;
   const totalDoctors = facilities.reduce((sum, f) => sum + f.doctors.length, 0);
@@ -273,7 +274,9 @@ const MinistryDashboard: React.FC = () => {
     const existing = acc.find(item => item.name === facility.region);
     const occupancy = facility.beds > 0 ? (facility.occupied_beds / facility.beds) * 100 : 0;
     if (existing) {
-      existing.value = (existing.value + occupancy) / 2; // Average occupancy
+      // If multiple facilities in same region, average their occupancy or sum beds
+      // For now, let's average the occupancy percentage
+      existing.value = (existing.value + occupancy) / 2;
     } else {
       acc.push({ name: facility.region, value: occupancy });
     }

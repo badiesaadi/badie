@@ -1,4 +1,5 @@
-export const API_BASE_URL: string = import.meta.env.VITE_API_URL || "http://localhost/med/backend";
+// Fix: Add type assertion for 'import.meta' to bypass TypeScript error when 'vite/client' types are not implicitly available.
+export const API_BASE_URL: string = (import.meta as any).env.VITE_API_URL || "http://localhost/med/backend";
 
 export enum UserRole {
   Client = 'client',

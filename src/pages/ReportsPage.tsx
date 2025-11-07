@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../components/layouts/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
-import { Facility, Appointment, ChartDataPoint, User } from '../types';
-import { facilityService, appointmentService } from '../services/api';
+import { Facility, Appointment, ChartDataPoint } from '../types';
+import { facilityService, appointmentService, ministryService } from '../services/api';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Alert } from '../components/ui/Alert';
 import { Card } from '../components/ui/Card';
 import { BarChartCard } from '../components/charts/BarChartCard';
 import { LineChartCard } from '../components/charts/LineChartCard';
 import { PieChartCard } from '../components/charts/PieChartCard';
-import { Download, TrendingUp, Hospital, CalendarClock } from 'lucide-react';
+import { Download, TrendingUp, Hospital, CalendarClock, Stethoscope } from 'lucide-react'; // Added Stethoscope
 import { Button } from '../components/ui/Button';
 import { UserRole, AppointmentStatus } from '../constants';
 import { motion } from 'framer-motion';
@@ -47,11 +47,15 @@ const GeneralAdminReports: React.FC = () => {
     try {
       setLoading(true);
       const facilitiesRes = await facilityService.listFacilities();
-      setFacilities(facilitiesRes.data);
+      setFacilities(facilitiesRes.data.facilities); // Extract from 'facilities' key
 
       // Fetch all appointments (requires a backend endpoint for general_admin to see all)
-      const allAppointmentsRes = await appointmentService.facilityAppointments(''); // Assuming empty string fetches all or a dedicated endpoint
-      setAllAppointments(allAppointmentsRes.data);
+      // Assuming appointmentService.facilityAppointments with empty string acts as 'all' or a dedicated endpoint.
+      // If the backend has a specific 'all_appointments.php' for general_admin, use that.
+      // For now, we'll try with an empty string, which the backend will need to interpret.
+      // A dedicated `appointmentService.listAllAppointments()` endpoint would be better here.
+      const allAppointmentsRes = await appointmentService.facilityAppointments('');
+      setAllAppointments(allAppointmentsRes.data.appointments); // Extract from 'appointments' key
 
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load general admin reports.');
@@ -69,7 +73,7 @@ const GeneralAdminReports: React.FC = () => {
   if (error) return <Alert type="error" message={error} />;
 
   // Data Processing for Charts
-  const nationalOccupancy = facilities.length > 0
+  const nationalOccupancy = facilities.length > 0 && facilities.reduce((sum, f) => sum + f.beds, 0) > 0
     ? (facilities.reduce((sum, f) => sum + f.occupied_beds, 0) / facilities.reduce((sum, f) => sum + f.beds, 0) * 100)
     : 0;
 
@@ -99,6 +103,10 @@ const GeneralAdminReports: React.FC = () => {
 
   // Simulated Export Functions
   const exportToCSV = (data: any[], filename: string) => {
+    if (data.length === 0) {
+      alert("No data to export.");
+      return;
+    }
     const csvContent = "data:text/csv;charset=utf-8," +
       Object.keys(data[0]).join(',') + '\n' +
       data.map(row => Object.values(row).join(',')).join('\n');
@@ -137,7 +145,7 @@ const GeneralAdminReports: React.FC = () => {
           color="text-yellow-500"
           progress={Math.min(100, Math.max(0, nationalOccupancy))}
         />
-        <KPIStat title="Total Doctors" value={totalDoctors} icon={UserRole} color="text-indigo-500" />
+        <KPIStat title="Total Doctors" value={totalDoctors} icon={Stethoscope} color="text-indigo-500" /> {/* Corrected icon */}
       </motion.div>
 
       <motion.div
@@ -202,10 +210,10 @@ const HospitalAdminReports: React.FC = () => {
     try {
       setLoading(true);
       const facilityRes = await facilityService.getMyFacility();
-      setMyFacility(facilityRes.data);
+      setMyFacility(facilityRes.data.facility); // Extract from 'facility' key
 
       const appointmentsRes = await appointmentService.facilityAppointments(user.facility_id);
-      setFacilityAppointments(appointmentsRes.data);
+      setFacilityAppointments(appointmentsRes.data.appointments); // Extract from 'appointments' key
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load hospital reports.');
     } finally {
@@ -225,7 +233,6 @@ const HospitalAdminReports: React.FC = () => {
   // Data Processing for Charts
   const totalPatients = facilityAppointments.filter(app => app.status !== AppointmentStatus.Cancelled).length;
   const occupiedBeds = myFacility.occupied_beds;
-  const availableBeds = myFacility.beds - occupiedBeds;
   const bedOccupancyPercentage = myFacility.beds > 0 ? (occupiedBeds / myFacility.beds) * 100 : 0;
   const totalAppointments = facilityAppointments.length;
 
@@ -270,7 +277,7 @@ const HospitalAdminReports: React.FC = () => {
           color="text-red-500"
           progress={Math.min(100, Math.max(0, bedOccupancyPercentage))}
         />
-        <KPIStat title="Available Doctors" value={myFacility.doctors.length} icon={UserRole} color="text-purple-500" />
+        <KPIStat title="Available Doctors" value={myFacility.doctors.length} icon={Stethoscope} color="text-purple-500" /> {/* Corrected icon */}
       </motion.div>
 
       <motion.div

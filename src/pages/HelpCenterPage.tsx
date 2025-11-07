@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '../components/layouts/DashboardLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input, Textarea } from '../components/ui/Input';
+import { Input } from '../components/ui/Input'; // Removed Textarea as unused
 import { MessageSquare, HelpCircle, Bot, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -108,7 +108,7 @@ const Chatbot: React.FC = () => {
           >
             <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-primary text-white rounded-t-lg">
               <h3 className="font-semibold flex items-center"><Bot size={18} className="mr-2" /> NCHP Chatbot</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)} className="text-white hover:text-gray-200 p-1" icon={XCircle} />
+              <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)} className="text-white hover:text-gray-200 p-1" icon={XCircle} aria-label="Close Chatbot" />
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
               {messages.length === 0 && (

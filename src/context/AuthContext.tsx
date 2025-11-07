@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, AuthResponse } from '../types';
+import { User, AuthLoginRegisterResponse, GetProfileResponse } from '../types';
 import { authService } from '../services/api';
 import { API_BASE_URL } from '../constants'; // Import for error handling feedback
 
@@ -48,10 +48,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (storedToken) {
       setLoading(true);
       try {
-        const profile = await authService.getProfile();
-        // Assume the API only returns the User object on success
+        const response = await authService.getProfile(); // Expects GetProfileResponse
+        // Assume the API now returns { success: true, user: User }
         setToken(storedToken);
-        setUser(profile);
+        setUser(response.data.user); // Extract user from the 'user' key
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Failed to fetch profile or token invalid:', error);
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: any) => {
     try {
-      const response: AuthResponse = (await authService.login(credentials)).data;
+      const response: AuthLoginRegisterResponse = (await authService.login(credentials)).data;
       storeAuthData(response.token, response.user);
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: any) => {
     try {
-      const response: AuthResponse = (await authService.register(userData)).data;
+      const response: AuthLoginRegisterResponse = (await authService.register(userData)).data;
       storeAuthData(response.token, response.user);
     } catch (error: any) {
       console.error('Registration failed:', error);

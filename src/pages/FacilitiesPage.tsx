@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../components/layouts/DashboardLayout';
 import { useAuth } from '../hooks/useAuth';
-import { Facility, User } from '../types';
-import { facilityService, authService } from '../services/api';
+import { Facility, User, FacilityPayload } from '../types'; // Added FacilityPayload
+import { facilityService, appointmentService } from '../services/api'; // Changed authService to appointmentService for listDoctors
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Alert } from '../components/ui/Alert';
-import { Input, Select, Textarea } from '../components/ui/Input';
+import { Input, Select } from '../components/ui/Input'; // Removed Textarea as unused in modals
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Table } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
-import { Plus, UserPlus, Building, Edit, MapPin } from 'lucide-react';
+import { Plus, UserPlus, Building, MapPin } from 'lucide-react'; // Removed Edit as unused
 import { UserRole } from '../constants';
 import { motion } from 'framer-motion';
 import { SearchFilterBar } from '../components/common/SearchFilterBar';
@@ -38,14 +38,16 @@ const CreateFacilityModal: React.FC<CreateFacilityModalProps> = ({ isOpen, onClo
     setLoading(true);
     setError(null);
     try {
-      await facilityService.createFacility({
+      const payload: FacilityPayload = {
         name,
         address,
         phone,
         type,
         region,
         beds: parseInt(beds),
-      });
+        occupied_beds: 0, // Default to 0 on creation
+      };
+      await facilityService.createFacility(payload);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -95,14 +97,9 @@ const AssignDoctorModal: React.FC<AssignDoctorModalProps> = ({ isOpen, onClose, 
   const fetchDoctors = useCallback(async () => {
     setLoading(true);
     try {
-      // Assuming an API endpoint to list all doctors (or unassigned doctors)
-      const res = await authService.getProfile(); // This is just a placeholder, in a real app would be `api.get('/users/doctors')`
-      // For demo, we just get the current user profile, this part needs a backend endpoint to list users
-      // To simulate, we'll create a dummy list of doctors
-      setDoctors([
-        { id: 'doc1', username: 'Dr. Smith', email: 'smith@example.com', role: UserRole.Doctor },
-        { id: 'doc2', username: 'Dr. Jones', email: 'jones@example.com', role: UserRole.Doctor },
-      ]);
+      // Assuming appointmentService.listDoctors returns { success: true, data: User[] }
+      const res = await appointmentService.listDoctors(); // Fetch all doctors
+      setDoctors(res.data.facilities?.[0]?.doctors || []); // Assuming doctors are nested in a 'facilities' array within the response for now
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch doctors.');
     } finally {
@@ -173,14 +170,10 @@ export const FacilitiesPage: React.FC = () => {
       if (user?.role === UserRole.Admin) {
         // Hospital admin sees only their facility
         const res = await facilityService.getMyFacility();
-        setFacilities(res.data ? [res.data] : []);
-      } else if (user?.role === UserRole.GeneralAdmin) {
-        // General admin sees all facilities
+        setFacilities(res.data.facility ? [res.data.facility] : []); // Extract from 'facility' key
+      } else { // GeneralAdmin, Client, Doctor all see all facilities
         const res = await facilityService.listFacilities();
-        setFacilities(res.data);
-      } else if (user?.role === UserRole.Doctor || user?.role === UserRole.Client) {
-        const res = await facilityService.listFacilities();
-        setFacilities(res.data);
+        setFacilities(res.data.facilities); // Extract from 'facilities' key
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load facilities.');
